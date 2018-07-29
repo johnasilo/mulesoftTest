@@ -1,0 +1,18 @@
+{
+  "customers":[
+    {
+      "customerID": "1",
+      "firstname": "John",
+      "lastname": "Hunt",
+      "address": "Sydney, Australia"
+    },
+    {
+      "customerID": "2",
+      "firstname": "Lea",
+      "lastname": "Hunt",
+      "address": "Cavite, Philippines"
+    }
+  ],
+    "message": "Successful.",
+    "status": "200"
+}

@@ -1,0 +1,186 @@
+#%RAML 1.0
+title: Business
+version: v1
+securitySchemes: 
+  basic:
+    type: Basic Authentication
+
+traits: 
+  searchable:
+    queryParameters: 
+      query:
+        description: |
+          JSON array [{"field1","value1","operator1"},{"field2","value2","operator2"},...,{"fieldN","valueN","operatorN"}] <<description>>
+        example: |
+          <<example>>
+        required: false
+  orderable:
+    queryParameters: 
+      orderBy:
+        description: |
+          Order by field: <<field>>
+        type: string
+        required: false
+      order:
+        description: Order
+        enum: [desc, asc]
+        default: desc
+        required: false
+  pageable:
+    queryParameters: 
+      offset:
+        description: Skip over a number of elements by specifying an offset value for the query
+        type: integer
+        required: false
+        example: 20
+        default: 0
+      limit:
+        description: Limit the number of elements on the response
+        type: integer
+        required: false
+        example: 80
+        default: 10
+  with204:
+    responses: 
+      204:
+        body:
+          application/json:
+            example: !include response204.sample
+
+  with400:
+    responses: 
+      400:
+        body: 
+          application/json:
+            example: !include response400.sample
+  with401:
+    responses: 
+      401:
+        body: 
+          application/json:
+            example: !include response401.sample
+  with403:
+    responses: 
+      403:
+        body: 
+          application/json:
+            example: !include response403.sample
+
+  with404:
+    responses: 
+      404: 
+        body: 
+          application/json:
+            example: !include response404.sample
+
+  with500:
+    responses: 
+      500:
+        body: 
+          application/json:
+            example: !include response500.sample
+
+
+resourceTypes: 
+  collection:
+    get:
+      is: [
+            with204,
+            with401,
+            with500
+          ]
+      responses: 
+        200:
+          body:
+            application/json:
+              example: |
+                <<exampleCollection>>
+    post:
+      body: 
+        application/json:
+          example: |
+            <<exampleItem>>
+      is: [
+            with400,
+            with401,
+            with403,
+            with500
+          ]
+      responses: 
+        201:
+          body:
+            application/json:
+              example: |
+                {
+                  "message": "<<resourcePathName|!singularize>> added.",
+                  "status": "201"
+                }
+  collection-item:
+    get:
+      is: [
+            with401,
+            with404,
+            with500
+          ]
+      responses: 
+        200:
+          body:
+            application/json:
+              example: |
+                <<exampleItemResponse>>
+    put:
+      body:
+        application/json:
+          example: |
+            <<exampleItemRequest>>
+      is: [
+            with400,
+            with401,
+            with403,
+            with404,
+            with500
+          ]
+      responses: 
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  "message": "<<resourcePathName|!singularize>> updated.",
+                  "status": "200"
+                }
+    delete:
+      is: [
+            with401,
+            with403,
+            with404,
+            with500
+          ]
+      responses: 
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  "message": "<<resourcePathName|!singularize>> deleted.",
+                  "status": "200"
+                }
+
+/customers:
+  type: 
+    collection:
+      exampleCollection: !include exampleCollection.sample
+      exampleItem: !include exampleItem.sample
+      
+  get:
+    is: [
+          searchable: {description: "with valid searchable fields: customerID", example: "[{\"customerID\", \"1\", \"equal\"}]"},
+          orderable: {field: "customerID"},
+          pageable
+        ]
+
+  /{customerID}:
+    type: 
+      collection-item:
+        exampleItemResponse: !include exampleItemResponse.sample
+        exampleItemRequest: !include exampleItemRequest.sample

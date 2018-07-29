@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+    <sfdc:config name="Salesforce__Basic_Authentication" username="duummyy123456789@gmail.com" password="4k0h4ns0lO" securityToken="LQls48aXlwOaQbPqUF0w4I8be" doc:name="Salesforce: Basic Authentication"/>
+    <flow name="getCustomers">
+        <logger message="#[message.inboundProperties.'http.query.params'.get('query')]" level="INFO" doc:name="Logger"/>
+        <set-variable variableName="queryParam" value="#[message.inboundProperties.'http.query.params'.get('query')]" doc:name="Variable"/>
+        <scripting:transformer doc:name="Script">
+            <scripting:script engine="Groovy"><![CDATA[if(message.getInvocationProperty('queryParam')!=null){
+	message.setInvocationProperty('queryParam','WHERE Account_ID__c = \'#[message.inboundProperties.\'http.query.params\'.get(\'query\')]\'');
+}
+else{
+	message.setInvocationProperty('queryParam','');
+}]]></scripting:script>
+        </scripting:transformer>
+        <logger message="#[flowVars.queryParam]" level="INFO" doc:name="Logger"/>
+        <sfdc:query config-ref="Salesforce__Basic_Authentication" query="dsql:SELECT Account_ID__c,FirstName,LastName,MailingCity,MailingCountry,MailingPostalCode,MailingState,MailingStreet FROM Contact #[flowVars.queryParam]" doc:name="Salesforce"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	customers: payload map ((payload01 , indexOfPayload01) -> {
+		customerID: payload01.Account_ID__c,
+		firstname: payload01.FirstName,
+		lastname: payload01.LastName,
+		address: payload01.MailingCity
+	}),
+	message: "Successful.",
+	status: "200"
+}]]></dw:set-payload>
+        </dw:transform-message>
+    </flow>
+    <flow name="getCustomersByID">
+        <logger message="#[flowVars.customerID]" level="INFO" doc:name="Logger"/>
+        <sfdc:query config-ref="Salesforce__Basic_Authentication" query="dsql:SELECT Account_ID__c,FirstName,LastName,MailingCity,MailingCountry,MailingPostalCode,MailingState,MailingStreet FROM Contact WHERE Account_ID__c = '#[flowVars.customerID]'" doc:name="Salesforce"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/json
+---
+{
+	customers: payload map ((payload01 , indexOfPayload01) -> {
+		customerID: payload01.Account_ID__c,
+		firstname: payload01.FirstName,
+		lastname: payload01.LastName,
+		address: payload01.MailingCity
+	}),
+	message: "Successful.",
+	status: "200"
+}]]></dw:set-payload>
+        </dw:transform-message>
+    </flow>
+    <flow name="postCustomer">
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+[{
+	LastName: payload.lastname,
+	FirstName: payload.firstname,
+	MailingCity: payload.address,
+	Account_ID__c: payload.customerID
+}]]]></dw:set-payload>
+        </dw:transform-message>
+        <sfdc:create config-ref="Salesforce__Basic_Authentication" type="Contact" doc:name="Salesforce">
+            <sfdc:objects ref="#[payload]"/>
+        </sfdc:create>
+        <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+        <set-payload value="{
+  &quot;message&quot;: &quot;customer added.&quot;,
+  &quot;status&quot;: &quot;201&quot;
+}" doc:name="Set Payload"/>
+    </flow>
+    <flow name="updateCustomer">
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+[{
+	LastName: payload.lastname,
+	FirstName: payload.firstname,
+	MailingCity: payload.address,
+	Account_ID__c: flowVars.customerID
+}]]]></dw:set-payload>
+        </dw:transform-message>
+        <sfdc:upsert config-ref="Salesforce__Basic_Authentication" externalIdFieldName="Account_ID__c" type="Contact" doc:name="Salesforce">
+            <sfdc:objects ref="#[payload]"/>
+        </sfdc:upsert>
+        <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+        <set-payload value="{
+  &quot;message&quot;: &quot;customer updated.&quot;,
+  &quot;status&quot;: &quot;200&quot;
+}" doc:name="Set Payload"/>
+    </flow>
+    <flow name="deleteCustomer">
+        <logger message="#[payload]" level="INFO" doc:name="Logger"/>
+        <dw:transform-message doc:name="Transform Message">
+            <dw:set-payload><![CDATA[%dw 1.0
+%output application/java
+---
+[{
+	Account_ID__c: flowVars.customerID
+}]]]></dw:set-payload>
+        </dw:transform-message>
+        <sfdc:hard-delete-bulk config-ref="Salesforce__Basic_Authentication" type="Contact" doc:name="Salesforce">
+            <sfdc:objects ref="#[payload]"/>
+        </sfdc:hard-delete-bulk>
+        <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+        <set-payload value="{
+  &quot;message&quot;: &quot;customer deleted.&quot;,
+  &quot;status&quot;: &quot;200&quot;
+}" doc:name="Set Payload"/>
+    </flow>
+</mule>
