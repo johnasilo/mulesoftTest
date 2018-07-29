@@ -1,0 +1,12 @@
+TO update a customer.
+
+URL: http://localhost:8081/api/customers/3
+METHOD: PUT
+HEADER: Content-type = application/json
+BODY: 
+{
+  "customerID": "3",
+  "firstname": "Manuel",
+  "lastname": "Cordero",
+  "address": "Philippines"	
+}

@@ -1,0 +1,13 @@
+To add a new customer.
+
+URL: http://localhost:8081/api/customers
+METHOD: POST
+HEADER: Content-type = application/json
+BODY:
+{
+  "customerID": "2",
+  "firstname": "John",
+  "lastname": "Asilo",
+  "address": "Fairfield"
+}
+

@@ -1,0 +1,4 @@
+to delete a customer.
+
+URL: http://localhost:8081/api/customers/3
+METHOD: DELETE

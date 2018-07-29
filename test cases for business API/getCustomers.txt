@@ -1,0 +1,15 @@
+For GET requests in customers resource.
+
+(1) 
+
+URL: http://localhost:8081/api/customers
+METHOD: GET
+
+-query all customers
+
+(2) 
+
+URL: http://localhost:8081/api/customers?query=12345678
+METHOD: GET
+
+-query a specific customer

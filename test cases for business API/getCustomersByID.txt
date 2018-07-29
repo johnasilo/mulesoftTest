@@ -1,0 +1,4 @@
+To get customers with customer ID.
+
+URL: http://localhost:8081/api/customers/12345678
+METHOD: GET
