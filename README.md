@@ -1,7 +1,7 @@
 # mulesoftTest
 API implementation on mulesoft.
 
-This API implementation is a web service that allow consumers to list, create, update, and delete customer information which are stored in Salesforce.
+This API implementation is a web service that allows consumers to list, create, update, and delete customer information which are stored in Salesforce.
 
 Contents:
 
